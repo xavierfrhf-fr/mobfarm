@@ -1,4 +1,4 @@
---alpha 5
+--alpha 6
 
 
 mob_of_interest = "Pig"
@@ -170,6 +170,7 @@ function check_and_request_move()
                         break
                     end
                 end
+            end
             if data.baby.actual < data.baby.objective then
                 if enclos_ID == 1 then
                     -- Breeder can't request animals
@@ -215,7 +216,8 @@ function print_mob_summary()
         term.clear()
         term.setCursorPos(1,1)
         for enclosure, data in pairs(enclos_data) do
-            print("Enclosure "..data.name..": Found "..data.adult.actual + data.baby.actual.." "..mob_of_interest.."s ("..data.baby.actual.." babies, "..data.adult.actual.." adults)")
+            local total = data.adult.actual + data.baby.actual
+            print("Enclosure "..data.name..": Found "..total.." "..mob_of_interest.."s ("..data.baby.actual.." babies, "..data.adult.actual.." adults)")
         end
         os.sleep(10)
         coroutine.yield()
