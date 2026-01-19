@@ -1,4 +1,4 @@
---alpha 4
+--alpha 5
 
 
 mob_of_interest = "Pig"
@@ -192,7 +192,7 @@ function user_input_handler()
         input = read()
         if input == "q" then
             os.shutdown()
-        elif input == "manual" then
+        elseif input == "manual" then
             print("Manual move requested. Enter initial enclosure ID:")
             local initial_ID = tonumber(read())
             print("Enter target enclosure ID:")
@@ -222,6 +222,6 @@ function print_mob_summary()
     end
 end
 
-parallel.waitForAll(print_mob_summary)
+parallel.waitForAll(print_mob_summary, check_and_request_move, user_input_handler)
 
 
