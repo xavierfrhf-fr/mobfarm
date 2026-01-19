@@ -1,41 +1,70 @@
---alpha 3
+--alpha 4
 
-detector = "environment_detector_1"
-D = peripheral.wrap(detector)
 
 mob_of_interest = "Pig"
 
-mob_summary = {}
 
 enclos_data = {
-    1 = {name = "Breeder",
+    [1] = {name = "Breeder",
         detector = "environment_detector_1",
         feeder = nil,
-        adult_upper = 10,
-        adult_lower = 6
+        adult = {
+            objective = 10,
+            min = 5,
+            actual = 0
         },
-    2 = {name = "Grow-out",
+        baby = {
+            objective = 15,
+            min = 7,
+            actual = 0
+        },
+    },
+    [2] = {name = "Grow-out",
         detector = "environment_detector_2",
         feeder = nil,
-        adult_upper = 20,
-        adult_lower = 10
+        adult = {
+            objective = 0,
+            min = 0,
+            actual = 0
         },
-    3 = {name = "Sewer",
+        baby = {
+            objective = 100,
+            min = 0,
+            actual = 0
+        },
+    },
+    [3] = {name = "Sewer",
         detector = "environment_detector_3",
         feeder = nil,
-        adult_upper = 30,
-        adult_lower = 15
+        adult = {
+            objective = 30,
+            min = 15,
+            actual = 0
         },
-    4 = {name = "Market",
+        baby = {
+            objective = 0,
+            min = 0,
+            actual = 0
+        }
+    },
+    [4] = {name = "Market",
         detector = "environment_detector_4",
         feeder = nil,
-        adult_upper = 50,
-        adult_lower = 25
+        adult = {
+            objective = 50,
+            min = 25,
+            actual = 0
+        },
+        baby = {
+            objective = 0,
+            min = 0,
+            actual = 0
         }
+    }
 }
 
 mob_mover = {
-    1 = {
+    [1] = {
         
         redstone_relay = "redstone_relay_23",
         relay_side = "left",
@@ -43,28 +72,28 @@ mob_mover = {
         initial_enclosure = 1,
         baby_only = false
     },
-    2 = {
+    [2] = {
         redstone_relay = "redstone_relay_23",
         relay_side = "right",
         target_enclosure = 2,
         initial_enclosure = 1,
         baby_only = true
     },
-    3 = {
+    [3] = {
         redstone_relay = "redstone_relay_24",
         relay_side = "left",
         target_enclosure = 3,
         initial_enclosure = 2,
         baby_only = false
     },
-    4 = {
+    [4] = {
         redstone_relay = "redstone_relay_24",
         relay_side = "right",
         target_enclosure = 4,
         initial_enclosure = 2,
         baby_only = false
     },
-    5 = {
+    [5] = {
         redstone_relay = "redstone_relay_25",
         relay_side = "left",
         target_enclosure = 4,
@@ -79,7 +108,7 @@ function scan_mobs(periph)
     for i=1, #scan do
         if scan[i].name == mob_of_interest then
             output.count = output.count + 1
-            if scan[i].isBaby == true then
+            if scan[i].baby == true then
                 output.baby = output.baby + 1
             else
                 output.adult = output.adult + 1
@@ -97,9 +126,10 @@ function scan_all_mobs()
     for i=1, #enclos_data do
         detector_periph = peripheral.wrap(enclos_data[i].detector)
         local scan = scan_mobs(detector_periph)
-        total[enclos_data[i].enclos] = scan
+        total[enclos_data[i].name] = scan
+        enclos_data[i].adult.actual = scan.adult
+        enclos_data[i].baby.actual = scan.baby
     end
-    mob_summary = total
     return total
 end
 
@@ -125,12 +155,67 @@ function is_animal_available(enclos, baby_only)
     end
 end
 
+function check_and_request_move()
+    while true do
+        scan_all_mobs()
+        for enclos_ID, data in pairs(enclos_data) do
+            if data.adult.actual < data.adult.objective then
+                if enclos_ID == 1 then
+                    -- Breeder can't request animals
+                else
+                    -- Request adult from previous enclosure
+                    local previous_enclos = enclos_data[enclos_ID - 1]
+                    if is_animal_available(previous_enclos.name, false) then
+                        move_animal(enclos_ID)
+                        break
+                    end
+                end
+            if data.baby.actual < data.baby.objective then
+                if enclos_ID == 1 then
+                    -- Breeder can't request animals
+                else
+                    -- Request baby from previous enclosure
+                    local previous_enclos = enclos_data[enclos_ID - 1]
+                    if is_animal_available(previous_enclos.name, true) then
+                        move_animal(enclos_ID)
+                        break
+                    end
+                end
+            end
+        end
+        coroutine.yield()
+    end
+end
+
+function user_input_handler()
+    while true do
+        input = read()
+        if input == "q" then
+            os.shutdown()
+        elif input == "manual" then
+            print("Manual move requested. Enter initial enclosure ID:")
+            local initial_ID = tonumber(read())
+            print("Enter target enclosure ID:")
+            local target_ID = tonumber(read())
+            for i=1, #mob_mover do
+                local mover = mob_mover[i]
+                if mover.initial_enclosure == initial_ID and mover.target_enclosure == target_ID then
+                    move_animal(target_ID)
+                    print("Animal moved from enclosure "..initial_ID.." to enclosure "..target_ID)
+                    break
+                end
+            end
+        end
+    end
+end
+
 function print_mob_summary()
     while true do
         scan_all_mobs()
-        os.clear()
-        for enclosure, data in pairs(mob_summary) do
-            print("Enclosure "..enclosure..": Found "..data.count.." "..mob_of_interest.."s ("..data.baby.." babies, "..data.adult.." adults, "..data.inLove.." in love)")
+        term.clear()
+        term.setCursorPos(1,1)
+        for enclosure, data in pairs(enclos_data) do
+            print("Enclosure "..data.name..": Found "..data.adult.actual + data.baby.actual.." "..mob_of_interest.."s ("..data.baby.actual.." babies, "..data.adult.actual.." adults)")
         end
         os.sleep(10)
         coroutine.yield()
