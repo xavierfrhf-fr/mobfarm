@@ -1,4 +1,4 @@
---alpha 9
+--alpha 10
 
 
 mob_of_interest = "Pig"
@@ -143,10 +143,10 @@ function scan_all_mobs()
     return total
 end
 
-function move_animal(target_enclos)
+function move_animal(target_enclos, initial_enclos)
     for i=1, #mob_mover do
         local mover = mob_mover[i]
-        if mover.target_enclosure == target_enclos then
+        if mover.target_enclosure == target_enclos and (initial_enclos == nil or mover.initial_enclosure == initial_enclos) then
             local relay = peripheral.wrap(mover.redstone_relay)
             relay.setOutput(mover.relay_side, true)
             os.sleep(0.5)
@@ -186,7 +186,7 @@ function check_and_request_move()
                     -- Request adult from previous enclosure
                     local previous_index = enclos_ID - 1
                     if is_animal_available(previous_index, false) then
-                        move_animal(enclos_ID)
+                        move_animal(enclos_ID, previous_index)
                         break
                     end
                 end
@@ -198,7 +198,7 @@ function check_and_request_move()
                     -- Request baby from previous enclosure
                     local previous_index = enclos_ID - 1
                     if is_animal_available(previous_index, true) then
-                        move_animal(enclos_ID)
+                        move_animal(enclos_ID, previous_index)
                         break
                     end
                 end
@@ -220,8 +220,8 @@ function user_input_handler()
             local target_ID = tonumber(read())
             for i=1, #mob_mover do
                 local mover = mob_mover[i]
-                if mover.initial_enclosure == initial_ID and mover.target_enclosure == target_ID then
-                    move_animal(target_ID)
+                    if mover.initial_enclosure == initial_ID and mover.target_enclosure == target_ID then
+                    move_animal(target_ID, initial_ID)
                     print("Animal moved from enclosure "..initial_ID.." to enclosure "..target_ID)
                     break
                 end
