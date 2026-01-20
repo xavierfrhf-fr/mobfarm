@@ -1,4 +1,4 @@
---alpha 7
+--alpha 8
 
 
 mob_of_interest = "Pig"
@@ -131,6 +131,12 @@ function scan_all_mobs()
         detector_periph = peripheral.wrap(enclos_data[i].detector)
         local scan = scan_mobs(detector_periph)
         total[enclos_data[i].name] = scan
+        if scan.adult == nil then
+            scan.adult = 0
+        end
+        if scan.baby == nil then
+            scan.baby = 0
+        end
         enclos_data[i].adult.actual = scan.adult
         enclos_data[i].baby.actual = scan.baby
     end
@@ -151,11 +157,20 @@ end
 
 function is_animal_available(enclos, baby_only)
 
-    local data = enclos_data[enclos]
+    local idx = tonumber(enclos)
+    if idx == nil then
+        return false
+    end
+    local data = enclos_data[idx]
+    if not data then
+        return false
+    end
     if baby_only == true then
-        return data.baby.actual > 0
+        local babyCount = (data.baby and data.baby.actual) or 0
+        return babyCount > 0
     else
-        return data.adult.actual > 0
+        local adultCount = (data.adult and data.adult.actual) or 0
+        return adultCount > 0
     end
 end
 
@@ -169,8 +184,8 @@ function check_and_request_move()
                     -- Breeder can't request animals
                 else
                     -- Request adult from previous enclosure
-                    local previous_enclos = enclos_data[enclos_ID - 1]
-                    if is_animal_available(previous_enclos.name, false) then
+                    local previous_index = enclos_ID - 1
+                    if is_animal_available(previous_index, false) then
                         move_animal(enclos_ID)
                         break
                     end
@@ -181,8 +196,8 @@ function check_and_request_move()
                     -- Breeder can't request animals
                 else
                     -- Request baby from previous enclosure
-                    local previous_enclos = enclos_data[enclos_ID - 1]
-                    if is_animal_available(previous_enclos.name, true) then
+                    local previous_index = enclos_ID - 1
+                    if is_animal_available(previous_index, true) then
                         move_animal(enclos_ID)
                         break
                     end
