@@ -1,4 +1,4 @@
---alpha 6
+--alpha 7
 
 
 mob_of_interest = "Pig"
@@ -105,6 +105,10 @@ mob_mover = {
 function scan_mobs(periph)
     local scan = periph.scanEntities(3)
     local output = { count = 0, baby = 0, adult = 0, inLove = 0 }
+    if scan == nil then
+        print("No mobs detected. for peripheral "..periph.getName())
+        return output
+    end
     for i=1, #scan do
         if scan[i].name == mob_of_interest then
             output.count = output.count + 1
@@ -146,17 +150,18 @@ function move_animal(target_enclos)
 end
 
 function is_animal_available(enclos, baby_only)
-    local mobs = scan_all_mobs()
-    local data = mobs[enclos]
+
+    local data = enclos_data[enclos]
     if baby_only == true then
-        return data.baby > 0
+        return data.baby.actual > 0
     else
-        return data.adult > 0
+        return data.adult.actual > 0
     end
 end
 
 function check_and_request_move()
     while true do
+        os.sleep(1)
         scan_all_mobs()
         for enclos_ID, data in pairs(enclos_data) do
             if data.adult.actual < data.adult.objective then
@@ -212,18 +217,21 @@ end
 
 function print_mob_summary()
     while true do
-        scan_all_mobs()
         term.clear()
         term.setCursorPos(1,1)
         for enclosure, data in pairs(enclos_data) do
             local total = data.adult.actual + data.baby.actual
             print("Enclosure "..data.name..": Found "..total.." "..mob_of_interest.."s ("..data.baby.actual.." babies, "..data.adult.actual.." adults)")
         end
-        os.sleep(10)
+        os.sleep(2)
         coroutine.yield()
     end
 end
 
-parallel.waitForAll(print_mob_summary, check_and_request_move, user_input_handler)
+parallel.waitForAll(
+    print_mob_summary,
+    check_and_request_move,
+    user_input_handler
+)
 
 
