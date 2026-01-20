@@ -1,4 +1,4 @@
---alpha 8
+--alpha 9
 
 
 mob_of_interest = "Pig"
@@ -15,7 +15,7 @@ enclos_data = {
         },
         baby = {
             objective = 15,
-            min = 7,
+            min = 0,
             actual = 0
         },
     },
@@ -166,11 +166,11 @@ function is_animal_available(enclos, baby_only)
         return false
     end
     if baby_only == true then
-        local babyCount = (data.baby and data.baby.actual) or 0
-        return babyCount > 0
+        
+        return data.baby.actual > data.baby.min
     else
-        local adultCount = (data.adult and data.adult.actual) or 0
-        return adultCount > 0
+        
+        return data.adult.actual > data.adult.min
     end
 end
 
